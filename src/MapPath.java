@@ -1,32 +1,46 @@
+import java.util.Arrays;
+
 public class MapPath {
 
-    private String path;
     private final int row;
     private final int col;
+
+    private long[] path;
+    private int pathItemCount;
 
     public MapPath() {
         this.row = -1;
         this.col = -1;
-        path = "ERROR";
+        path = new long[1];
+        pathItemCount = -1;
     }
 
     public MapPath(int row, int col) {
         this.row = row;
         this.col = col;
-        path = "";
+        path = new long[0];
+        pathItemCount = 0;
     }
 
     // Добавление шага к пути
-    public void addCellValue(boolean cellValue) {
-        path = path + (cellValue ? "1" : "0");
+    public void addCellValue(boolean newStep) {
+        if (pathItemCount % 63 == 0){
+            path = Arrays.copyOf(path, path.length + 1);
+        }
+        pathItemCount++;
+        AppUtils.shiftLeft(path, newStep);
     }
 
-    public String getPath() {
+    public long[] getPath() {
         return path;
     }
 
-    public int getLength() {
-        return path.length() - 1;
+    public int getCount() {
+        return pathItemCount;
+    }
+
+    public int getLength()  {
+        return pathItemCount - 1;
     }
 
     public int getRow() {

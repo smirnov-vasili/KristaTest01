@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class GlobalMap {
 
@@ -113,9 +114,16 @@ public class GlobalMap {
 
     // Построение путей обхода для каждой из ячеек поля карты
     public void buildPaths() {
+        // Инициализация путей начальными значениями
+        for (int row = 0; row < getRowCount(); row++) {
+            for (int col = 0; col < getColCount(); col++) {
+                int i = row * getColCount() + col;
+                paths.get(i).addCellValue(getCell(row, col));
+            }
+        }
         ArrayList<MapPath> builtPaths = new ArrayList<>();
         MapPathComparatorByPath mapPathComparator = new MapPathComparatorByPath();
-        int num = 0;
+        int num = 1;
         do {
             MapCoords coords = getCellEnvironment(num);
             int deltaRow = coords.row;
@@ -127,12 +135,12 @@ public class GlobalMap {
             int i = paths.size() - 2;
             while (i > 0) {
                 MapPath path = paths.get(i);
-                if (testPath(i - 1, path.getPath())) {
+                if (testPath(i - 1, path)) {
                     path.addCellValue(getCell(path.getRow() + deltaRow, path.getCol() + deltaCol));
                     i--;
                     paths.get(i).addCellValue(getCell(paths.get(i).getRow() + deltaRow, paths.get(i).getCol() + deltaCol));
                 } else {
-                    if (testPath(i + 1, path.getPath())) {
+                    if (testPath(i + 1, path)) {
                         path.addCellValue(getCell(path.getRow() + deltaRow, path.getCol() + deltaCol));
                     } else {
                         builtPaths.add(path);
@@ -151,8 +159,18 @@ public class GlobalMap {
     }
 
     // Тестирование заданного элемента списка путей на "совпадение"
-    private boolean testPath(int index, String pathStr) {
-        return paths.get(index).getPath().startsWith(pathStr);
+    private boolean testPath(int index, MapPath path) {
+        MapPath nearPath = paths.get(index);
+        if (nearPath.getCount() < path.getCount()) return false;
+        long[] nearPathArr = Arrays.copyOf(nearPath.getPath(), nearPath.getPath().length);
+        // Приведение второго сравниваемого пути к размеру первого
+        AppUtils.shiftRight(nearPathArr, nearPath.getCount() - path.getCount());
+        // Сравнение
+        int i = path.getPath().length - 1;
+        while (i >= 0 && path.getPath()[i] == nearPathArr[i]) {
+            i--;
+        }
+        return i < 0;
     }
 
     // Максимальная длина пути
@@ -164,7 +182,7 @@ public class GlobalMap {
     public String getMaxPathCells() {
         String cells = "";
         int i = 0;
-        while (i < paths.size() && paths.get(i).getLength() == getMaxPathLength()){
+        while (i < paths.size() && paths.get(i).getLength() == getMaxPathLength()) {
             cells = cells.concat(String.format(" (%d,%d)",
                     paths.get(i).getCol() + 1, getRowCount() - paths.get(i).getRow()));
             i++;
@@ -177,7 +195,7 @@ public class GlobalMap {
     public float getAvgPathLength() {
         int totalLength = 0;
         for (MapPath path : paths) {
-            totalLength += path.getLength();
+            totalLength += path.getCount() - 1;
         }
         return totalLength * 1f / paths.size();
     }
