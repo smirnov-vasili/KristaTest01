@@ -112,7 +112,7 @@ public class GlobalMap {
     }
 
     // Построение путей обхода для каждой из ячеек поля карты
-    public void boildPaths() {
+    public void buildPaths() {
         ArrayList<MapPath> builtPaths = new ArrayList<>();
         MapPathComparatorByPath mapPathComparator = new MapPathComparatorByPath();
         int num = 0;
