@@ -4,7 +4,7 @@ public class MapPathComparatorByPathLength implements Comparator<MapPath> {
     @Override
     public int compare(MapPath path1, MapPath path2) {
         // Наиболее длинные пути должны быть сверху (порядок обратный!)
-        int result = path2.getCount() - path1.getCount();
+        int result = path2.getPathBitCount() - path1.getPathBitCount();
         if (result != 0) return result;
         // На выходе Y-координата будет инверирована (порядок обратный!)
         result = path2.getRow() - path1.getRow();

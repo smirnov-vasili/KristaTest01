@@ -6,29 +6,35 @@ public class MapPath {
     private final int col;
 
     private long[] path;
-    private int pathItemCount;
+    private int pathBitCount;
+    private int hash;
 
     public MapPath() {
         this.row = -1;
         this.col = -1;
         path = new long[1];
         path[0] = -1;
-        pathItemCount = -1;
+        pathBitCount = -1;
     }
 
     public MapPath(int row, int col) {
         this.row = row;
         this.col = col;
         path = new long[0];
-        pathItemCount = 0;
+        pathBitCount = 0;
+    }
+
+    public boolean isEquals(MapPath path) {
+        return this.hash == path.hash && this.getPath()[0] == path.getPath()[0];
     }
 
     // Добавление шага к пути
     public void addCellValue(boolean newStep) {
-        if (pathItemCount % 63 == 0){
+        if (pathBitCount % 63 == 0){
             path = Arrays.copyOf(path, path.length + 1);
+            hash = pathBitCount > 0 ? Arrays.hashCode(path) : 0;
         }
-        pathItemCount++;
+        pathBitCount++;
         shiftLeft(path, newStep);
     }
 
@@ -49,12 +55,12 @@ public class MapPath {
         return path;
     }
 
-    public int getCount() {
-        return pathItemCount;
+    public int getPathBitCount() {
+        return pathBitCount;
     }
 
-    public int getLength()  {
-        return pathItemCount - 1;
+    public int getPathLength()  {
+        return pathBitCount - 1;
     }
 
     public int getRow() {

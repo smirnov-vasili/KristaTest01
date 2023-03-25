@@ -3,7 +3,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
 
 public class GlobalMap {
 
@@ -131,10 +130,10 @@ public class GlobalMap {
             int i = paths.size() - 2;
             while (i > 0) {
                 MapPath path = paths.get(i);
-                if (Arrays.equals(path.getPath(), paths.get(i - 1).getPath())) {
+                if (path.isEquals(paths.get(i - 1))) {
                     i--;
                 } else {
-                    if (!Arrays.equals(path.getPath(), paths.get(i + 1).getPath())) {
+                    if (!path.isEquals(paths.get(i + 1))) {
                         singlePaths.add(path);
                     }
                 }
@@ -153,12 +152,12 @@ public class GlobalMap {
         } while (paths.size() > 0);
         this.paths.sort(new MapPathComparatorByPathLength());
         long endTime = System.currentTimeMillis();
-        System.out.printf("Вермя %d мс", endTime - startTime);
+        System.out.printf("Время %d мс", endTime - startTime);
     }
 
     // Максимальная длина пути
     public int getMaxPathLength() {
-        return paths.size() > 0 ? paths.get(0).getLength() : 0;
+        return paths.size() > 0 ? paths.get(0).getPathLength() : 0;
     }
 
     // Список ячеек карты с максимальной длиной пути
@@ -166,7 +165,7 @@ public class GlobalMap {
         String cells = "";
         if (paths.size() == 0) return cells;
         int i = 0;
-        while (i < paths.size() && paths.get(i).getLength() == getMaxPathLength()) {
+        while (i < paths.size() && paths.get(i).getPathLength() == getMaxPathLength()) {
             cells = cells.concat(String.format(" (%d,%d)",
                     paths.get(i).getCol() + 1, getRowCount() - paths.get(i).getRow()));
             i++;
@@ -180,7 +179,7 @@ public class GlobalMap {
         if (paths.size() == 0) return 0;
         int totalLength = 0;
         for (MapPath path : paths) {
-            totalLength += path.getCount() - 1;
+            totalLength += path.getPathLength();
         }
         return totalLength * 1f / paths.size();
     }
