@@ -2,9 +2,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class GlobalMap {
 
@@ -21,11 +20,6 @@ public class GlobalMap {
     public void initField(int rows, int cols) {
         cells = new boolean[rows][cols];
         paths = new ArrayList<>();
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < cols; col++) {
-                paths.add(new MapPath(row, col));
-            }
-        }
     }
 
     // Чтение ячейки карты
@@ -75,10 +69,10 @@ public class GlobalMap {
 
     public void loadFromFile(String fileName) {
         try {
-            FileReader inpitFile = new FileReader(fileName, Charset.forName("Cp1251"));
+            FileReader inpitFile = new FileReader(fileName);
             BufferedReader bufferedReader = new BufferedReader(inpitFile);
             String line = bufferedReader.readLine();
-            String[] lineParts = line.split("\s+");
+            String[] lineParts = line.split(" ");
             int cols = Integer.parseInt(lineParts[0]);
             int rows = Integer.parseInt(lineParts[1]);
             initField(rows, cols);
@@ -100,7 +94,7 @@ public class GlobalMap {
 
     public void saveToFile(String fileName) {
         try {
-            FileWriter outputFile = new FileWriter(fileName, Charset.forName("Cp1251"));
+            FileWriter outputFile = new FileWriter(fileName);
             outputFile.write(String.format("%.3f", getAvgPathLength()));
             outputFile.write("\r\n");
             outputFile.write(String.valueOf(getMaxPathLength()));
@@ -114,37 +108,34 @@ public class GlobalMap {
 
     // Построение путей обхода для каждой из ячеек поля карты
     public void buildPaths() {
-        // Инициализация путей начальными значениями
+        long startTime = System.currentTimeMillis();
+        // Начальное заполнение списка путей для каждой ячейки карты
+        ArrayList<MapPath> paths = new ArrayList<>();
         for (int row = 0; row < getRowCount(); row++) {
             for (int col = 0; col < getColCount(); col++) {
-                int i = row * getColCount() + col;
-                paths.get(i).addCellValue(getCell(row, col));
+                MapPath path = new MapPath(row, col);
+                path.addCellValue(getCell(row, col));
+                paths.add(path);
             }
         }
-        ArrayList<MapPath> builtPaths = new ArrayList<>();
         MapPathComparatorByPath mapPathComparator = new MapPathComparatorByPath();
-        int num = 1;
+        int stepNum = 1;
         do {
-            MapCoords coords = getCellEnvironment(num);
-            int deltaRow = coords.row;
-            int deltaCol = coords.col;
+            MapCoords delta = getCellEnvironment(stepNum);
             paths.sort(mapPathComparator);
             // Заглушки в начале и в конце списка путей для однородности алгоритма
             paths.add(0, new MapPath());
             paths.add(paths.size(), new MapPath());
+            // Поиск неповторяющихся путей
+            ArrayList<MapPath> singlePaths = new ArrayList<>();
             int i = paths.size() - 2;
             while (i > 0) {
                 MapPath path = paths.get(i);
-                if (testPath(i - 1, path)) {
-                    path.addCellValue(getCell(path.getRow() + deltaRow, path.getCol() + deltaCol));
+                if (Arrays.equals(path.getPath(), paths.get(i - 1).getPath())) {
                     i--;
-                    paths.get(i).addCellValue(getCell(paths.get(i).getRow() + deltaRow, paths.get(i).getCol() + deltaCol));
                 } else {
-                    if (testPath(i + 1, path)) {
-                        path.addCellValue(getCell(path.getRow() + deltaRow, path.getCol() + deltaCol));
-                    } else {
-                        builtPaths.add(path);
-                        paths.remove(path);
+                    if (!Arrays.equals(path.getPath(), paths.get(i + 1).getPath())) {
+                        singlePaths.add(path);
                     }
                 }
                 i--;
@@ -152,35 +143,28 @@ public class GlobalMap {
             // Удаление заглушек
             paths.remove(0);
             paths.remove(paths.size() - 1);
-            num++;
+            // Удаление законченных неповторяющихся путей
+            this.paths.addAll(singlePaths);
+            paths.removeAll(singlePaths);
+            // Достройка шага для оставшихся путей
+            paths.parallelStream()
+                    .forEach(p -> p.addCellValue(getCell(p.getRow() + delta.row, p.getCol() + delta.col)));
+            stepNum++;
         } while (paths.size() > 0);
-        paths = builtPaths;
-        paths.sort(new MapPathComparatorByPathLength());
-    }
-
-    // Тестирование заданного элемента списка путей на "совпадение"
-    private boolean testPath(int index, MapPath path) {
-        MapPath nearPath = paths.get(index);
-        if (nearPath.getCount() < path.getCount()) return false;
-        long[] nearPathArr = Arrays.copyOf(nearPath.getPath(), nearPath.getPath().length);
-        // Приведение второго сравниваемого пути к размеру первого
-        AppUtils.shiftRight(nearPathArr, nearPath.getCount() - path.getCount());
-        // Сравнение
-        int i = path.getPath().length - 1;
-        while (i >= 0 && path.getPath()[i] == nearPathArr[i]) {
-            i--;
-        }
-        return i < 0;
+        this.paths.sort(new MapPathComparatorByPathLength());
+        long endTime = System.currentTimeMillis();
+        System.out.printf("Вермя %d мс", endTime - startTime);
     }
 
     // Максимальная длина пути
     public int getMaxPathLength() {
-        return paths.get(0).getLength();
+        return paths.size() > 0 ? paths.get(0).getLength() : 0;
     }
 
     // Список ячеек карты с максимальной длиной пути
     public String getMaxPathCells() {
         String cells = "";
+        if (paths.size() == 0) return cells;
         int i = 0;
         while (i < paths.size() && paths.get(i).getLength() == getMaxPathLength()) {
             cells = cells.concat(String.format(" (%d,%d)",
@@ -193,6 +177,7 @@ public class GlobalMap {
 
     // Средняя длина пути обхода для всех ячеек
     public float getAvgPathLength() {
+        if (paths.size() == 0) return 0;
         int totalLength = 0;
         for (MapPath path : paths) {
             totalLength += path.getCount() - 1;

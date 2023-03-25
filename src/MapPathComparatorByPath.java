@@ -1,16 +1,18 @@
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class MapPathComparatorByPath implements Comparator<MapPath> {
     @Override
     public int compare(MapPath path1, MapPath path2) {
-        int i = path1.getPath().length - 1;
-        while (i >= 0 && path1.getPath()[i] == path2.getPath()[i]) {
+        /*return Arrays.compare(path1.getPath(), path2.getPath());*/
+        long[] p1 = path1.getPath();
+        long[] p2 = path2.getPath();
+        int i = p1.length - 1;
+        while (i >= 0 && p1[i] == p2[i]) {
             i--;
         }
-        if (i < 0) {
-            return 0;
-        } else {
-            return path1.getPath()[i] - path2.getPath()[i] > 0 ? 1 : -1;
-        }
+        return i < 0 ? 0 : (p1[i] - p2[i] > 0 ? 1 : -1);
     }
 }

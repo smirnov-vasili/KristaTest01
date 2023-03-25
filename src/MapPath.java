@@ -12,6 +12,7 @@ public class MapPath {
         this.row = -1;
         this.col = -1;
         path = new long[1];
+        path[0] = -1;
         pathItemCount = -1;
     }
 
@@ -28,7 +29,20 @@ public class MapPath {
             path = Arrays.copyOf(path, path.length + 1);
         }
         pathItemCount++;
-        AppUtils.shiftLeft(path, newStep);
+        shiftLeft(path, newStep);
+    }
+
+    private static final long LOW_BIT_MASK = 1;
+    private static final long HIGH_BIT_MASK = (long) Math.pow(2, 62);
+
+    public void shiftLeft(long[] arr, boolean newBit) {
+        for (int i = 0; i < arr.length; i++) {
+            boolean highBit = (arr[i] & HIGH_BIT_MASK) > 0;
+            if (highBit) arr[i] &= ~HIGH_BIT_MASK;
+            arr[i] = arr[i] << 1;
+            if (newBit) arr[i] |= LOW_BIT_MASK;
+            newBit = highBit;
+        }
     }
 
     public long[] getPath() {
