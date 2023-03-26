@@ -17,11 +17,17 @@ public class MapPath {
         pathBitCount = -1;
     }
 
-    public MapPath(int row, int col) {
+    public MapPath(int row, int col, boolean value) {
         this.row = row;
         this.col = col;
         path = new long[0];
         pathBitCount = 0;
+        addCellValue(value);
+    }
+
+    // Метод требуется для второго алгоритма поиска путей!
+    public int getHash() {
+        return 31 * hash + (int) (getPath()[0] ^ (getPath()[0] >>> 32));
     }
 
     public boolean isEquals(MapPath path) {

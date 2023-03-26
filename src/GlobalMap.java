@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GlobalMap {
 
@@ -112,8 +113,7 @@ public class GlobalMap {
         ArrayList<MapPath> paths = new ArrayList<>();
         for (int row = 0; row < getRowCount(); row++) {
             for (int col = 0; col < getColCount(); col++) {
-                MapPath path = new MapPath(row, col);
-                path.addCellValue(getCell(row, col));
+                MapPath path = new MapPath(row, col, getCell(row, col));
                 paths.add(path);
             }
         }
@@ -121,11 +121,11 @@ public class GlobalMap {
         int stepNum = 1;
         do {
             MapCoords delta = getCellEnvironment(stepNum);
+            // Поиск неповторяющихся путей (начало вариант 1) **********************************************************
             paths.sort(mapPathComparator);
             // Заглушки в начале и в конце списка путей для однородности алгоритма
             paths.add(0, new MapPath());
             paths.add(paths.size(), new MapPath());
-            // Поиск неповторяющихся путей
             ArrayList<MapPath> singlePaths = new ArrayList<>();
             int i = paths.size() - 2;
             while (i > 0) {
@@ -142,6 +142,17 @@ public class GlobalMap {
             // Удаление заглушек
             paths.remove(0);
             paths.remove(paths.size() - 1);
+            // Поиск неповторяющихся путей (конец вариант 1) ***********************************************************
+            // Поиск неповторяющихся путей (начало вариант 2) **********************************************************
+            /*List<MapPath> singlePaths = paths
+                    .parallelStream()
+                    .collect(Collectors.groupingBy(MapPath::getHash))
+                    .values()
+                    .stream()
+                    .filter(m -> m.size() == 1)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());*/
+            // Поиск неповторяющихся путей (конец вариант 2) ***********************************************************
             // Удаление законченных неповторяющихся путей
             this.paths.addAll(singlePaths);
             paths.removeAll(singlePaths);
