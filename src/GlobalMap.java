@@ -3,7 +3,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class GlobalMap {
 
@@ -69,8 +68,8 @@ public class GlobalMap {
 
     public void loadFromFile(String fileName) {
         try {
-            FileReader inpitFile = new FileReader(fileName);
-            BufferedReader bufferedReader = new BufferedReader(inpitFile);
+            FileReader inputFile = new FileReader(fileName);
+            BufferedReader bufferedReader = new BufferedReader(inputFile);
             String line = bufferedReader.readLine();
             String[] lineParts = line.split(" ");
             int cols = Integer.parseInt(lineParts[0]);
@@ -85,7 +84,7 @@ public class GlobalMap {
                 row++;
             }
             bufferedReader.close();
-            inpitFile.close();
+            inputFile.close();
         } catch (IOException e) {
             System.out.println(e.getMessage());
             initField(1, 1);
